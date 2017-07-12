@@ -1,4 +1,4 @@
-var camera, scene, renderer,dummy, mainObject, standardMaterial, startTime, spotLight, spotLight2, cameraTarget, wasSplit, wasReflected;
+var camera, scene, renderer,dummy, mainObject, standardMaterial, startTime, spotLight, spotLight2, cameraTarget, wasSplit, wasReflected, rotateAllTween;
 var lastFrame = null;
 init();
 
@@ -101,7 +101,7 @@ function placeMainObject(){
             wasReflected = false;
             dummy.add( mainObject );
             scene.add(dummy);
-            TweenMax.from(dummy.scale,.5, {x:0,y:0,z:0, delay: 1});
+            TweenMax.fromTo(dummy.scale,.5, {x:0,y:0,z:0},{x:1,y:1,z:1, delay: 1});
             // TweenMax.delayedCall(2, splitSequence);
             animate();
 
@@ -115,9 +115,21 @@ function splitSequence(){
         dummy = splitUpObject(16,5.5);
         scene.add(dummy);
         TweenMax.from(dummy.scale, 0.5, {x:0,y:0,z:0, delay: 0.5});
-        TweenMax.to(dummy.rotation, 30, {z:toRadians(360), repeat:-1, ease:Linear.easeNone});
+        rotateAllTween = TweenMax.to(dummy.rotation, 30, {z:toRadians(360), repeat:-1, ease:Linear.easeNone});
     }});
 
+}
+
+function unsplitSequence(){
+    TweenMax.to(dummy.scale,0.5, {x:0,y:0,z:0, onComplete:function(){
+        rotateAllTween.kill();
+        scene.remove(dummy);
+        dummy = new THREE.Mesh(new THREE.CubeGeometry(.001, .001, .001), standardMaterial);
+        mainObject.rotation.y = 20;
+        dummy.add(mainObject);
+        scene.add(dummy);
+        TweenMax.from(dummy.scale, 0.5, {x:0,y:0,z:0, delay: 0.5});
+    }});
 }
 
 function splitUpObject(numberOfClones, radius){
@@ -171,15 +183,19 @@ function animate() {
 function update() {
     var timePassed = getTimeSinceLastFrame();
     var animationConstant = timePassed/100 ;
-    if(mainObject.rotation.y > 100 && wasSplit == false){
-        splitSequence();
+    if(dummy.children[0].rotation.y > 50 && wasSplit == false){
         wasSplit = true;
+        splitSequence();
     }
-    if(mainObject.rotation.y < -100 && wasReflected == false){
+    if(dummy.children[0].rotation.y < -25 && wasSplit == true){
+        wasSplit = false;
+        unsplitSequence();
+    }
+    if(dummy.children[0].rotation.y < -50 && wasReflected == false){
         TweenMax.to(standardMaterial, 0.5, {reflectivity:0.2});
         wasReflected = true;
     }
-    if(mainObject.rotation.y > 0 && wasReflected == true){
+    if(dummy.children[0].rotation.y > -25 && wasReflected == true){
         TweenMax.to(standardMaterial, 0.5, {reflectivity:0.0});
         wasReflected = false;
     }
